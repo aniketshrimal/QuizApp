@@ -30,6 +30,10 @@ contract QuizApp {
     
     event PaymentDetails(uint sender);
     
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only owner is allowed to call this method.");
+        _;
+    }
     constructor(uint _N, uint _startTime, uint _timeLimit, uint _pfee) public payable {
         require(_pfee >=0 && _N >0 && _timeLimit > 0, "invalid arguments!! please rectify" );
         
@@ -39,14 +43,29 @@ contract QuizApp {
         endTime = joinTime + _timeLimit;
         pFee = _pfee;
         //prepare questions 
-        question1 = "What is the protocol used in Bitcoin?";
-        answer1 = "Longest chain protocol";
-        question2 = "What is P2P?";
-        answer2 = "Peer to Peer";
-        question3 = "Who created Bitcoin?";
-        answer3 = "Satoshi";
-        question4 = "What is the limit on number of Bitcoins?";
-        answer4 = "21 million";
+        // question1 = "What is the protocol used in Bitcoin?";
+        // answer1 = "Longest chain protocol";
+        // question2 = "What is P2P?";
+        // answer2 = "Peer to Peer";
+        // question3 = "Who created Bitcoin?";
+        // answer3 = "Satoshi";
+        // question4 = "What is the limit on number of Bitcoins?";
+        // answer4 = "21 million";
+    }
+    event print(string s);
+    function addQuestions(string _q1, string _q2, string _q3, string _q4, string _a1, string _a2, string _a3, string _a4) public
+    onlyOwner() {
+        question1 = _q1;
+        question2 = _q2;
+        question3 = _q3;
+        question4 = _q4;
+        answer1 = _a1;
+        answer2 = _a2;
+        answer3 = _a3;
+        answer4 = _a4;
+        
+        emit print(question1);
+        emit print(question2);
     }
     function registerPlayers() payable {
         require(isValid[msg.sender] == false,"Already registered!!!");
