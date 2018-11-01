@@ -1,86 +1,168 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.4.23;
 
-
-contract Quizapp{
-	
-	 /* this variable holds the address of the moderator which will organize online quiz */
-    address public moderator;
-
-    /* Time when contract is created */
-    uint startTime;
-
-
-    /* Time passed after initialisation of contract */
-    function getcurrTime() public view returns(uint a){
-        return now - startTime;
+contract QuizApp {
+    string question1;
+    string answer1;
+    string question2;
+    string answer2;
+    string question3;
+    string answer3;
+    string question4;
+    string answer4;
+    address public owner;
+    uint joinTime;
+    uint endTime;
+    uint N; //max number of players
+    uint currNoPlayers; //registered players <= N
+    uint public pFee;
+    struct Player{
+        string answer1;
+        string answer2;
+        string answer3;
+        string answer4;
+        address Account;
+        uint pendingAmount;
+        uint Timestamp;
     }
-
-    /* Till {startTime + participantDeadline} all people who want to take part in online quiz should be registered*/
-    uint participantDeadline;
+    mapping(address => Player) allPlayers;
+    mapping(address => bool) public isValid;
+    mapping(uint => address) PlayerList;
     
-    /* to check the number of participant registering for the quiz */
-    uint num_participant;
-
-    /* to limit maximum number of participant registering for the quiz upto N people */
-    uint max_participant;
-
-    /* participation fee */
-    uint participation_fee;
-
-
-    /* This structure will represent each participant in the quiz */
-    struct Participant{
-        address account;
-    }
-
-    /* For now any number of participants are allowed*/
-    Participant[] public participants;
-    num_participant = 0;
-    /* To check that only one participant can register from one address */
-    mapping (address => uint) private is_participant;
+    event PaymentDetails(uint sender);
     
-    mapping(address => uint) pendingReturns;
+    constructor(uint _N, uint _startTime, uint _timeLimit, uint _pfee) public payable {
+        require(_pfee >=0 && _N >0 && _timeLimit > 0, "invalid arguments!! please rectify" );
+        
+        N = _N;
+        owner = msg.sender;
+        joinTime = now + _startTime;
+        endTime = joinTime + _timeLimit;
+        pFee = _pfee;
+        //prepare questions 
+        question1 = "What is the protocol used in Bitcoin?";
+        answer1 = "Longest chain protocol";
+        question2 = "What is P2P?";
+        answer2 = "Peer to Peer";
+        question3 = "Who created Bitcoin?";
+        answer3 = "Satoshi";
+        question4 = "What is the limit on number of Bitcoins?";
+        answer4 = "21 million";
+    }
+    function registerPlayers() payable {
+        require(isValid[msg.sender] == false,"Already registered!!!");
+        require(now < joinTime,"You are late!!");
+        require(msg.sender != owner, "You already know the answers! ");
+        require(currNoPlayers <= N,"Limit exceeded");
+        require(msg.value >= pFee, "please pay atleast the participation fee to proceed");
+        currNoPlayers++;
+        Player currPlayer;
+        currPlayer.Account = msg.sender;
+        currPlayer.pendingAmount = msg.value-pFee;
+        allPlayers[msg.sender] = currPlayer;
+        isValid[msg.sender] = true;
+        PlayerList[currNoPlayers] = msg.sender;
+    }
     
-
-    modifier onlyBefore(uint _time){
-        require(now - startTime < _time, "Too Late"); _;
+    function startQuiz() public returns(string, string, string, string) {
+        require(now>joinTime && now < endTime,"Time Out!");
+        require(currNoPlayers>0,"Waiting for players to join");
+        require(isValid[msg.sender] == true,"Please register to start quiz!!!");
+        return(question1,question2,question3,question4);
     }
-
-    // ensures the call is made after certain time
-    modifier onlyAfter(uint _time){
-        require(now - startTime > _time, "Too early"); _;
+    function endQuiz(string a1,string a2,string a3,string a4) public returns(string) {
+        require(now < endTime, "Times up!!!!!");
+        require(now > joinTime, "Quiz hasnt started yet");
+        require(isValid[msg.sender] == true, "You cant access Quiz!!!");
+        isValid[msg.sender] = false;
+        allPlayers[msg.sender].Timestamp = now;
+        allPlayers[msg.sender].answer1 = a1;
+        allPlayers[msg.sender].answer2 = a2;
+        allPlayers[msg.sender].answer3 = a3;
+        allPlayers[msg.sender].answer4 = a4;
+        return "Thanks for participating!";
     }
-
-    // ensures only the moderator is calling the function
-    modifier onlyModerator(){
-        require(msg.sender == moderator, "Only Moderator is allowed to call this method"); _;
+    
+    function declareWinner() payable public {
+        require(msg.sender == owner, "You are not allowed to declare Winner");
+        address winner = owner;
+        uint _winnerTime = endTime;
+        uint prize = 0;
+        for(uint i=1; i<=currNoPlayers; i++)
+        {
+            if(keccak256(allPlayers[PlayerList[i]].answer1) == keccak256(answer1) && _winnerTime > allPlayers[PlayerList[i]].Timestamp)
+            {
+                _winnerTime = allPlayers[PlayerList[i]].Timestamp;
+                winner = PlayerList[i];
+            }
+        }
+        if(winner != owner)
+        {
+            prize = (3*pFee*currNoPlayers)/16;
+            allPlayers[winner].pendingAmount += prize;
+        }
+        winner = owner;
+        _winnerTime = endTime;
+        prize = 0;
+        //question 2
+        for(i=1; i<=currNoPlayers; i++)
+        {
+            if(keccak256(allPlayers[PlayerList[i]].answer2) == keccak256(answer2) && _winnerTime > allPlayers[PlayerList[i]].Timestamp)
+            {
+                _winnerTime = allPlayers[PlayerList[i]].Timestamp;
+                winner = PlayerList[i];
+            }
+        }
+        if(winner != owner)
+        {
+            prize = (3*pFee*currNoPlayers)/16;
+            allPlayers[winner].pendingAmount += prize;
+        }
+        
+        winner = owner;
+        _winnerTime = endTime;
+        prize = 0;
+        for(i=1; i<=currNoPlayers; i++)
+        {
+            if(keccak256(allPlayers[PlayerList[i]].answer3) == keccak256(answer3) && _winnerTime > allPlayers[PlayerList[i]].Timestamp)
+            {
+                _winnerTime = allPlayers[PlayerList[i]].Timestamp;
+                winner = PlayerList[i];
+            }
+        }
+        if(winner != owner)
+        {
+            prize = (3*pFee*currNoPlayers)/16;
+            allPlayers[winner].pendingAmount += prize;
+        }
+        
+        winner = owner;
+        _winnerTime = endTime;
+        prize = 0;
+        for(i=1; i<=currNoPlayers; i++)
+        {
+            if(keccak256(allPlayers[PlayerList[i]].answer4) == keccak256(answer4) && _winnerTime > allPlayers[PlayerList[i]].Timestamp)
+            {
+                _winnerTime = allPlayers[PlayerList[i]].Timestamp;
+                winner = PlayerList[i];
+            }
+        }
+        if(winner != owner)
+        {
+            prize = (3*pFee*currNoPlayers)/16;
+            allPlayers[winner].pendingAmount += prize;
+        }
+        
+        for(i=1; i<=currNoPlayers; i++)
+        {
+            uint Balance = allPlayers[PlayerList[i]].pendingAmount;
+            emit PaymentDetails(Balance);
+            if(Balance > 0)
+            {
+                allPlayers[PlayerList[i]].pendingAmount = 0;
+                // allPlayers[PlayerList[i]].Account.transfer(Balance);
+            }
+        }
+        // selfdestruct(owner);
     }
-
-
-    /* Takes max no of people participating in quiz , Time after which participant registeration will close (measured from startTime)*/
-    constructor (uint _nopeople,uint _participantDeadline,uint _pfee ) public{
-        participantDeadline = _participantDeadline;
-        max_participant = _nopeople;
-        participation_fee = _pfee;
-        startTime = now;
-        moderator = msg.sender;
-    }
-
-
-    /* A public function which will register the participant iff one has not registered before */
-    function registerParticipant()
-    public
-    payable
-    // allow registration of participants only before the participantDeadline
-    onlyBefore(participantDeadline)
-    {
-        require(num_participant < max_participant , "Sorry, but the quiz is full" );
-        require(is_participant[msg.sender] == 0, "Sorry, but you have already registered for this quiz as a participant");
-        require(msg.value >= participation_fee, "Insufficient funds");
-        is_participant[msg.sender] = 1;          // Add it to the map
-        participants.push(Participant({account:msg.sender}));
-        pendingReturns[msg.sender] = msg.value - participation_fee;  
-        num_participant+=1;
-    }
-
 }
+
