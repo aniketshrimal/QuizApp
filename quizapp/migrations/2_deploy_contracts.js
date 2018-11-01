@@ -1,5 +1,5 @@
-var Auctioneer = artifacts.require("./Quizapp.sol");
+var Quizapp = artifacts.require("./Quizapp.sol");
 
 module.exports = function(deployer) {
-  // deployer.deploy(Auctioneer,15,19,4, 4);
+  deployer.deploy(Quizapp,5,10,20,5);
 };
