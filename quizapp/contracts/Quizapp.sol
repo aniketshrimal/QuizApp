@@ -59,15 +59,6 @@ contract Quizapp{
         total=4;
         num_questions=1;
         currNoPlayers=0;
-        //prepare questions 
-        // question1 = "What is the protocol used in Bitcoin?";
-        // answer1 = "Longest chain protocol";
-        // question2 = "What is P2P?";
-        // answer2 = "Peer to Peer";
-        // question3 = "Who created Bitcoin?";
-        // answer3 = "Satoshi";
-        // question4 = "What is the limit on number of Bitcoins?";
-        // answer4 = "21 million";
     }
     event print(string s);
 
@@ -80,6 +71,10 @@ contract Quizapp{
     function getAnswer() public view returns(string a){
         return questions[num_questions-1].ans;
     }
+    function getQuestionNumber() public view returns(uint a){
+        return num_questions-1;
+    }
+
     function getAnswer1() public view returns(string u)
     {
         return answer1[msg.sender];
@@ -100,8 +95,17 @@ contract Quizapp{
     {
         return pendingReturns[msg.sender];
     }
+    function getParticipationFee() public view returns(uint a)
+    {
+        return pFee;
+    }
+    function getContractBalance() public view returns (uint a)
+    {
+        return address(this).balance;
+    }
     function addQuestions(string _q1, string _a1) public
     onlyOwner() {
+        require(now < joinTime,"you are late !!");
         require(num_questions<=total,"No more questions can be added");
         questions[num_questions].ques = _q1;
         questions[num_questions].ans = _a1;
@@ -112,7 +116,7 @@ contract Quizapp{
         require(isValid[msg.sender] == false,"Already registered!!!");
         require(now < joinTime,"You are late!!");
         require(msg.sender != owner, "You already know the answers! ");
-        require(currNoPlayers <= N,"Limit exceeded");
+        require(currNoPlayers <N,"Limit exceeded");
         require(msg.value >= pFee, "please pay atleast the participation fee to proceed");        
         isValid[msg.sender] = true;
         participants.push(Participant({account:msg.sender}));
@@ -131,12 +135,6 @@ contract Quizapp{
         require(now < endTime, "Times up!!!!!");
         require(now > joinTime, "Quiz hasnt started yet");
         require(isValid[msg.sender] == true, "You cant access Quiz!!!");
-        // isValid[msg.sender] = false;
-        // allPlayers[msg.sender].Timestamp = now;
-        // allPlayers[msg.sender].answer1 = _a1;
-        // allPlayers[msg.sender].answer2 = _a2;
-        // allPlayers[msg.sender].answer3 = _a3;
-        // allPlayers[msg.sender].answer4 = _a4;
         answer1[msg.sender]=_a1;
         answer2[msg.sender]=_a2;
         answer3[msg.sender]=_a3;
@@ -152,6 +150,7 @@ contract Quizapp{
     public
 
     onlyOwner(){
+        require(now>endTime,"Quiz has not ended!!");
         uint count1=0;
         uint count2=0;
         uint count3=0;
@@ -213,92 +212,22 @@ contract Quizapp{
         {
             uint Balance = pendingReturns[PlayerList[i]];
             emit PaymentDetails(Balance);
-            
         }  
 
    }
 
-    // function declareWinner() payable public {
-    //     require(msg.sender == owner, "You are not allowed to declare Winner");
-    //     address winner = owner;
-    //     uint _winnerTime = endTime;
-    //     uint prize = 0;
-    //     for(uint i=1; i<=currNoPlayers; i++)
-    //     {
-    //         if(keccak256(allPlayers[PlayerList[i]].answer1) == keccak256(answer1) && _winnerTime > allPlayers[PlayerList[i]].Timestamp)
-    //         {
-    //             _winnerTime = allPlayers[PlayerList[i]].Timestamp;
-    //             winner = PlayerList[i];
-    //         }
-    //     }
-    //     if(winner != owner)
-    //     {
-    //         prize = (3*pFee*currNoPlayers)/16;
-    //         allPlayers[winner].pendingAmount += prize;
-    //     }
-    //     winner = owner;
-    //     _winnerTime = endTime;
-    //     prize = 0;
-    //     //question 2
-    //     for(i=1; i<=currNoPlayers; i++)
-    //     {
-    //         if(keccak256(allPlayers[PlayerList[i]].answer2) == keccak256(answer2) && _winnerTime > allPlayers[PlayerList[i]].Timestamp)
-    //         {
-    //             _winnerTime = allPlayers[PlayerList[i]].Timestamp;
-    //             winner = PlayerList[i];
-    //         }
-    //     }
-    //     if(winner != owner)
-    //     {
-    //         prize = (3*pFee*currNoPlayers)/16;
-    //         allPlayers[winner].pendingAmount += prize;
-    //     }
-        
-    //     winner = owner;
-    //     _winnerTime = endTime;
-    //     prize = 0;
-    //     for(i=1; i<=currNoPlayers; i++)
-    //     {
-    //         if(keccak256(allPlayers[PlayerList[i]].answer3) == keccak256(answer3) && _winnerTime > allPlayers[PlayerList[i]].Timestamp)
-    //         {
-    //             _winnerTime = allPlayers[PlayerList[i]].Timestamp;
-    //             winner = PlayerList[i];
-    //         }
-    //     }
-    //     if(winner != owner)
-    //     {
-    //         prize = (3*pFee*currNoPlayers)/16;
-    //         allPlayers[winner].pendingAmount += prize;
-    //     }
-        
-    //     winner = owner;
-    //     _winnerTime = endTime;
-    //     prize = 0;
-    //     for(i=1; i<=currNoPlayers; i++)
-    //     {
-    //         if(keccak256(allPlayers[PlayerList[i]].answer4) == keccak256(answer4) && _winnerTime > allPlayers[PlayerList[i]].Timestamp)
-    //         {
-    //             _winnerTime = allPlayers[PlayerList[i]].Timestamp;
-    //             winner = PlayerList[i];
-    //         }
-    //     }
-    //     if(winner != owner)
-    //     {
-    //         prize = (3*pFee*currNoPlayers)/16;
-    //         allPlayers[winner].pendingAmount += prize;
-    //     }
-        
-    //     for(i=1; i<=currNoPlayers; i++)
-    //     {
-    //         uint Balance = allPlayers[PlayerList[i]].pendingAmount;
-    //         emit PaymentDetails(Balance);
-    //         if(Balance > 0)
-    //         {
-    //             allPlayers[PlayerList[i]].pendingAmount = 0;
-    //             // allPlayers[PlayerList[i]].Account.transfer(Balance);
-    //         }
-    //     }
-    //     // selfdestruct(owner);
-    // }
+   function withdraw() 
+   public
+   payable
+   {
+        require(now>endTime,"Quiz is not ended!!");
+        require(pendingReturns[msg.sender]>0,"No pending returns");
+        uint Balance = pendingReturns[msg.sender];       
+        (msg.sender).transfer(Balance);
+        pendingReturns[msg.sender]=0;
+   
+   }
+
+    
 }
 
