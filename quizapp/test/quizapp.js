@@ -170,6 +170,16 @@ contract('Quizapp', (accounts)=>{
 		}
 		
 	})
+	it('Check if quiz can be attempted by non-registered user', async() =>{
+		try{
+			await contractInstance.startQuiz({from:accounts[1]});
+			assert.equal(1,2,"Quiz is attempted by non-registered user");
+		}
+		catch(err){
+			console.log(err.message);
+		}
+
+	})
 
 	it('Check answer is submitted or not', async() =>{
 		await contractInstance.startQuiz({from:accounts[1]});
@@ -186,7 +196,7 @@ contract('Quizapp', (accounts)=>{
 			
 	})
 
-	it('Check answer is submitted or not for other users', async() =>{
+	it('Check answer is submittedfor other users', async() =>{
 		await contractInstance.endQuiz("don't know","Peer to Peer","Satoshi","don't know",{from:accounts[2]});
 		await contractInstance.endQuiz("don't know","don't know","don't know","21 million",{from:accounts[3]});
 		await contractInstance.endQuiz("don't know","don't know","don't know","don't know",{from:accounts[4]});
@@ -257,6 +267,27 @@ contract('Quizapp', (accounts)=>{
 		assert.equal(0,d.c[0]-s.c[0],"payments are not correct");
 
 	})
+
+	it('Check if quiz can be started after deadline', async() =>{
+		try{
+			await contractInstance.startQuiz({from:accounts[1]});
+			assert.equal(1,2,"Quiz is not ending");
+		}
+		catch(err){
+			console.log(err.message);
+		}
+
+	})
 	
+	it('Check if quiz can be submitted after deadline', async() =>{
+		try{
+			await contractInstance.endQuiz("don't know","don't know","don't know","21 million",{from:accounts[3]});
+			assert.equal(1,2,"Quiz is not ending");
+		}
+		catch(err){
+			console.log(err.message);
+		}
+
+	})
 
 })

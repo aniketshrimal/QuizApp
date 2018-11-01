@@ -145,8 +145,7 @@ contract Quizapp{
        return keccak256(a) == keccak256(b);
        }
 
-    function declareWinner() 
-    payable 
+    function declareWinner()
     public
 
     onlyOwner(){
